@@ -1,5 +1,4 @@
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -24,6 +23,8 @@ public class Main extends Application{
     private Button[][] blocks1;
     private Button[][] blocks2;
     private TextArea results;
+    private Button go = new Button();
+    private Animator animator = new Animator();
 
     /**
      * main method
@@ -140,8 +141,12 @@ public class Main extends Application{
         results = new TextArea();
         results.setPrefWidth(200);
         Button getActions = new Button("Get Actions");
-        vBox4.getChildren().addAll(results, getActions);
+        go = new Button("Next Step");
+        go.setDisable(true);
+        vBox4.getChildren().addAll(results, getActions, go);
         vBox4.setSpacing(10);
+
+        go.setOnAction(event -> animate());
 
         getActions.setOnAction(event -> calculateActions());
 
@@ -151,6 +156,15 @@ public class Main extends Application{
         mainHBox.getChildren().addAll(vBox, vBox4);
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    private void animate() {
+        System.out.println(animator.states.size());
+        if (animator.states.size() > 0) {
+            updateButtons(animator.pop(), blocks1);
+        } else {
+            go.setDisable(true);
+        }
     }
 
     /**
@@ -267,7 +281,6 @@ public class Main extends Application{
      * Method that calculates the required actions of the block-world-problem.
      */
     private void calculateActions() {
-        Platform.runLater(() -> { //calculations done in own thread
             results.setText("");
 
             int startPos = 2;
@@ -296,6 +309,37 @@ public class Main extends Application{
 
             updateButtons(initialState, this.blocks1);
 
+            animator = new Animator();
+
+            if (startPos == endPos) {
+                for (int i = 3; i >= 0; i--) {
+                    char block = initialState.getStacks().get(startPos).get(i);
+                    initialState.remove(startPos);
+                    if (startPos == 0) {
+                        initialState.add(block, 1);
+                        System.out.printf("MOVE(%c, %d)\n", block, 1);
+                        State tempState = new State();
+                        tempState.copyState(initialState);
+                        animator.addState(tempState);
+                        results.setText(results.getText() + "MOVE(" + block + ", " + 1 + ")\n");
+                        locations.put(block, 1);
+                    } else {
+                        initialState.add(block, 0);
+                        System.out.printf("MOVE(%c, %d)\n", block, 0);
+                        State tempState = new State();
+                        tempState.copyState(initialState);
+                        animator.addState(tempState);
+                        results.setText(results.getText() + "MOVE(" + block + ", " + 0 + ")\n");
+                        locations.put(block, 0);
+                    }
+                }
+                if (startPos == 0) {
+                    startPos = 1;
+                } else {
+                    startPos = 0;
+                }
+            }
+
             for (int i = 0; i < size; i++) {
                 char target = finalState.getStacks().get(endPos).get(i);
                 for (int j = initialState.getStacks().get(locations.get(target)).size() - 1; j >= 0; j--) {
@@ -304,7 +348,10 @@ public class Main extends Application{
                             initialState.remove(locations.get(target));
                             initialState.add(target, endPos);
                             System.out.printf("MOVE(%c, %d)\n", target, endPos);
-                            results.setText(results.getText() +  "MOVE(" + target + ", "  + endPos + ")\n");
+                            State tempState = new State();
+                            tempState.copyState(initialState);
+                            animator.addState(tempState);
+                            results.setText(results.getText() + "MOVE(" + target + ", " + endPos + ")\n");
                             locations.put(target, endPos);
                             break;
                         }
@@ -318,14 +365,28 @@ public class Main extends Application{
                         }
                         char elm = initialState.getStacks().get(locations.get(target)).get(j);
                         System.out.printf("MOVE(%c, %d)\n", elm, storage);
-                        results.setText(results.getText() +  "MOVE(" + elm + ", "  + storage + ")\n");
+                        results.setText(results.getText() + "MOVE(" + elm + ", " + storage + ")\n");
                         initialState.remove(locations.get(target));
                         initialState.add(elm, storage);
+                        State tempState = new State();
+                        tempState.copyState(initialState);
+                        animator.addState(tempState);
                         locations.put(elm, storage);
                     }
+                    //updateButtons(initialState, blocks1);
+                    //updateButtons(initialState, blocks1);
                 }
             }
-        });
+            if (animator.states.size() > 0) {
+                go.setDisable(false);
+            }
+        //updateButtons(initialState, blocks1);
+    }
+
+    void doSomething() {
+        for (int i = 0; i < 1000000; i++) {
+            System.out.print(i);
+        }
     }
 
     /**

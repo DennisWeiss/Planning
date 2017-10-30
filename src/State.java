@@ -15,6 +15,18 @@ public class State {
         }
     }
 
+    public void copyState(State otherState) {
+        this.stacks = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            this.stacks.add(new ArrayList<>());
+        }
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < otherState.getStacks().get(i).size(); j++) {
+                this.stacks.get(i).add(otherState.getStacks().get(i).get(j));
+            }
+        }
+    }
+
     /**
      *
      * @return the ArrayList representing the stacks
